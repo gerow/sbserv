@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"syscall"
 )
 
 type FileRef struct {
@@ -87,7 +88,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if (err.(*os.PathError)).Err == syscall.ENOENT {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -108,6 +113,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	case mode.IsRegular():
 		handleFile(file, p, w, r)
 	default:
+		http.Error(w, "Refusing to read a non-regular file.", http.StatusBadRequest)
 		return
 	}
 }
