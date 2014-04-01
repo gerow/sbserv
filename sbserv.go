@@ -35,7 +35,7 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 	}
 
 	var page Page
-	page.Path = p
+	page.Path = r.URL.Path
 	for _, f := range fi {
 		//fmt.Fprintf(w, "%s\n", f.Name())
 		var fr FileRef

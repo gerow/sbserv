@@ -1,5 +1,8 @@
 <html>
   <h1 class="path">{{.Path}}</h1>
+  <div class="dldir-div">
+  	<a href="{{.Path}}?dldir=true">Download this directory</a>
+  </div>
   <table class="dir-table">
     <thead>
       <th>
@@ -7,6 +10,11 @@
       </th>
     </thead>
     <tbody>
+      <tr>
+      	<td>
+      	  <a href="..">..</a>
+      	</td>
+      </tr>
       {{with .FileRefs}}
         {{range .}}
           <tr>
