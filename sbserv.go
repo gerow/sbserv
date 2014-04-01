@@ -80,6 +80,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	p := path.Join(cwd, r.URL.Path)
 	p = path.Clean(p)
 	if !strings.HasPrefix(p, cwd) {
+		log.Println("Received request for file outside serve root.")
+		http.Error(w, "Refusing to serve path outside serve root.", http.StatusBadRequest)
 		return
 	}
 
@@ -113,6 +115,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	case mode.IsRegular():
 		handleFile(file, p, w, r)
 	default:
+		log.Println("Received attempt to serve non-regular file")
 		http.Error(w, "Refusing to read a non-regular file.", http.StatusBadRequest)
 		return
 	}
