@@ -28,7 +28,7 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 	fi, err := file.Readdir(-1)
 
 	if err != nil {
-		fmt.Fprintf(w, "failed")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -41,7 +41,8 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 	fi, err := file.Readdir(-1)
 
 	if err != nil {
-		fmt.Fprintf(w, "failed to handle dl dir")
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -53,6 +54,8 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 	for _, fiEntry := range fi {
 		f, err := os.Open(path.Join(p, fiEntry.Name()))
 		if err != nil {
+			// if we have any trouble with a file just skip it and log the error
+			log.Println(err.Error())
 			continue
 		}
 
@@ -60,6 +63,7 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 
 		fileWriter, err := zw.Create(fiEntry.Name())
 		if err != nil {
+			log.Println(err.Error())
 			continue
 		}
 
@@ -82,13 +86,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	if err != nil {
-		fmt.Fprintf(w, "Failed to open file.")
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	fi, err := file.Stat()
 	if err != nil {
-		fmt.Fprintf(w, "Failed to stat file.")
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
