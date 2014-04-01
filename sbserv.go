@@ -94,7 +94,7 @@ func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request)
 }
 
 func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
-	p = strings.TrimPrefix(p, "/_static/")
+	p = strings.TrimPrefix(p, "/_static/"+vhash)
 
 	log.Printf("Got request for static asset %s", p)
 
@@ -118,6 +118,8 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 	case ext == ".png":
 		w.Header().Set("Content-Type", "image/png")
 	}
+
+	w.Header().Set("Cache-Control", "public")
 
 	fmt.Fprint(w, string(assetBytes))
 }
