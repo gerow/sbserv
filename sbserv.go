@@ -119,7 +119,9 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 	}
 
+	// Don't ever expire
 	w.Header().Set("Cache-Control", "public")
+	w.Header().Set("Expires", "Sun, 17-Jan-2038 19:14:07 GMT")
 
 	fmt.Fprint(w, string(assetBytes))
 }
