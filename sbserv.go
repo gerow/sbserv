@@ -15,17 +15,20 @@ import (
 )
 
 type FileRef struct {
-	Path string
-	Name string
+	Path    string
+	Name    string
+	ModTime string
 }
 
 type Page struct {
 	Path     string
 	FileRefs []FileRef
+	VHash    string
 }
 
 var cwd string
 var dirListingTemplate *template.Template
+var vhash string
 
 func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
 	// Read the directory
@@ -38,11 +41,14 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 
 	var page Page
 	page.Path = r.URL.Path
+	page.VHash = vhash
+	const layout = "Mon Jan 2 15:04:05 PST 2006"
 	for _, f := range fi {
 		//fmt.Fprintf(w, "%s\n", f.Name())
 		var fr FileRef
 		fr.Name = f.Name()
 		fr.Path = path.Join(r.URL.Path, f.Name())
+		fr.ModTime = string(f.ModTime().Format(layout))
 		page.FileRefs = append(page.FileRefs, fr)
 	}
 
@@ -189,6 +195,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	vhashBytes, err := Asset("data/version_hash")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	vhash = string(vhashBytes)
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(":8080", nil)

@@ -11,8 +11,13 @@ DATA_FILES += $(DATA_DIR)/static/img/glyphicons-halflings.png
 DATA_FILES += $(DATA_DIR)/static/js/bootstrap.js
 DATA_FILES += $(DATA_DIR)/static/js/bootstrap.min.js
 
+DATA_FILES += $(DATA_DIR)/version_hash
+
 all: bindata.go
 	go build
+
+$(DATA_DIR)/version_hash: .git
+	git rev-parse HEAD > $(DATA_DIR)/version_hash
 
 bindata.go: $(DATA_FILES)
 	go get github.com/jteeuwen/go-bindata/...

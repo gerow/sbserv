@@ -18,33 +18,47 @@
   </head>
 
   <body>
+    <div class="container">
     <h1 class="path">{{.Path}}</h1>
     <div class="dldir-div">
       <a href="{{.Path}}?dldir=true">Download this directory</a>
     </div>
-    <table class="table dir-table">
-      <thead>
-        <th>
-          Name
-        </th>
-      </thead>
-      <tbody>
-        <tr>
-        	<td>
-        	  <a href="..">..</a>
-        	</td>
-        </tr>
-        {{with .FileRefs}}
-          {{range .}}
-            <tr>
-              <td>
-                <a href="{{.Path}}">{{.Name}}</a>
-              </td>
-            </tr>
+      <table class="table dir-table">
+        <thead>
+          <th>
+            Name
+          </th>
+          <th>
+            Time Modified
+          </th>
+        </thead>
+        <tbody>
+          <tr>
+          	<td>
+          	  <a href="./">Parent Directory</a>
+          	</td>
+            <td>
+            </td>
+          </tr>
+          {{with .FileRefs}}
+            {{range .}}
+              <tr>
+                <td>
+                  <a href="{{.Path}}">{{.Name}}</a>
+                </td>
+                <td>
+                  {{.ModTime}}
+                </td>
+              </tr>
+            {{end}}
           {{end}}
-        {{end}}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="container">
+      Rendered using <a href="https://github.com/gerow/sbserv">sbserv</a> revision {{.VHash}}
+    </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
