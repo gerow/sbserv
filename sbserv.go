@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -85,12 +86,36 @@ func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request)
 	io.Copy(w, file)
 }
 
+func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
+	p = strings.TrimPrefix(p, "/_static/")
+
+	log.Printf("Got request for static asset %s", p)
+
+	assetPath := path.Join("data/static/", p)
+	log.Printf("Using path %s", assetPath)
+
+	assetBytes, err := Asset(assetPath)
+	if err != nil {
+		log.Println("Received request for static file we don't have")
+		http.Error(w, "No such static asset", http.StatusNotFound)
+		return
+	}
+
+	fmt.Fprint(w, string(assetBytes))
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	p := path.Join(cwd, r.URL.Path)
 	p = path.Clean(p)
 	if !strings.HasPrefix(p, cwd) {
 		log.Println("Received request for file outside serve root.")
 		http.Error(w, "Refusing to serve path outside serve root.", http.StatusBadRequest)
+		return
+	}
+
+	// determine if this is a request for assets
+	if strings.HasPrefix(r.URL.Path, "/_static/") {
+		handleStatic(r.URL.Path, w, r)
 		return
 	}
 
@@ -143,7 +168,7 @@ func main() {
 	}
 
 	// Parse the dir listing template
-	dirListingBytes, err := Asset("data/dir_listing.html")
+	dirListingBytes, err := Asset("data/templates/dir_listing.html")
 	if err != nil {
 		log.Fatal(err)
 	}
