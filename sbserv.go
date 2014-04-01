@@ -116,12 +116,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
+		log.Printf("Handling %s as a directory\n", p)
 		if r.FormValue("dldir") == "true" {
 			handleDownloadDir(file, p, w, r)
 		} else {
 			handleDir(file, p, w, r)
 		}
 	case mode.IsRegular():
+		log.Printf("Handling %s as a regular file\n", p)
 		handleFile(file, p, w, r)
 	default:
 		log.Println("Received attempt to serve non-regular file")
@@ -140,7 +142,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dirListingTemplate, err = template.ParseFiles("templates/dir_listing.html")
+	// Parse the dir listing template
+	dirListingBytes, err := Asset("data/dir_listing.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dirListingTemplate, err = template.New("dir_listing.html").Parse(string(dirListingBytes))
 	if err != nil {
 		log.Fatal(err)
 	}
