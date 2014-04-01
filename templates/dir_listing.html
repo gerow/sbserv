@@ -1,0 +1,21 @@
+<html>
+  <h1 class="path">{{.Path}}</h1>
+  <table class="dir-table">
+    <thead>
+      <th>
+        Name
+      </th>
+    </thead>
+    <tbody>
+      {{with .FileRefs}}
+        {{range .}}
+          <tr>
+            <td>
+              <a href="{{.Path}}">{{.Name}}</a>
+            </td>
+          </tr>
+        {{end}}
+      {{end}}
+    </tbody>
+  </table>
+</html>

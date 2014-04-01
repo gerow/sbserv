@@ -2,7 +2,7 @@ package main
 
 import (
 	"archive/zip"
-	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -23,6 +23,7 @@ type Page struct {
 }
 
 var cwd string
+var dirListingTemplate *template.Template
 
 func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
 	// Read the directory
@@ -33,9 +34,17 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	var page Page
+	page.Path = p
 	for _, f := range fi {
-		fmt.Fprintf(w, "%s\n", f.Name())
+		//fmt.Fprintf(w, "%s\n", f.Name())
+		var fr FileRef
+		fr.Name = f.Name()
+		fr.Path = path.Join(r.URL.Path, f.Name())
+		page.FileRefs = append(page.FileRefs, fr)
 	}
+
+	dirListingTemplate.Execute(w, page)
 }
 
 func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
@@ -124,10 +133,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	var err error
 
+	log.Printf("starting")
+
 	cwd, err = os.Getwd()
 	if err != nil {
 		log.Fatal(err)
-		return
+	}
+
+	dirListingTemplate, err = template.ParseFiles("templates/dir_listing.html")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	http.HandleFunc("/", handler)
