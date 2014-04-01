@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
@@ -99,6 +100,17 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 		log.Println("Received request for static file we don't have")
 		http.Error(w, "No such static asset", http.StatusNotFound)
 		return
+	}
+
+	log.Printf("Using extension %s", filepath.Ext(p))
+
+	switch ext := filepath.Ext(p); {
+	case ext == ".css":
+		w.Header().Set("Content-Type", "text/css")
+	case ext == ".js":
+		w.Header().Set("Content-Type", "text/javascript")
+	case ext == ".png":
+		w.Header().Set("Content-Type", "image/png")
 	}
 
 	fmt.Fprint(w, string(assetBytes))
