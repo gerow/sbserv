@@ -67,6 +67,8 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 
 	//fmt.Fprintf(w, "we're going to try to give you a zip now!")
 
+	w.Header().Set("Content-Type", "application/zip")
+
 	zw := zip.NewWriter(w)
 	defer zw.Close()
 
