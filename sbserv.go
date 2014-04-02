@@ -207,6 +207,12 @@ func main() {
 
 	vhash = string(vhashBytes)
 
+	if len(os.Args) != 2 {
+		log.Fatal("must specify bind address")
+	}
+
+	bindAddress := os.Args[1]
+
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(bindAddress, nil)
 }
