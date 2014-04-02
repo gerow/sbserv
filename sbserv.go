@@ -29,6 +29,7 @@ type Page struct {
 var cwd string
 var dirListingTemplate *template.Template
 var vhash string
+var fileServerHandler http.Handler
 
 func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
 	// Read the directory
@@ -90,7 +91,8 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 }
 
 func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
-	io.Copy(w, file)
+	//io.Copy(w, file)
+	fileServerHandler.ServeHTTP(w, r)
 }
 
 func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
@@ -212,6 +214,8 @@ func main() {
 	}
 
 	bindAddress := os.Args[1]
+
+	fileServerHandler = http.FileServer(http.Dir(cwd))
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(bindAddress, nil)
