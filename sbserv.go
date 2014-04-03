@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 )
@@ -32,10 +33,23 @@ var dirListingTemplate *template.Template
 var vhash string
 var fileServerHandler http.Handler
 
+type ByName []FileRef
+
+func (a ByName) Len() int {
+	return len(a)
+}
+
+func (a ByName) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a ByName) Less(i, j int) bool {
+	return a[i].Name < a[j].Name
+}
+
 func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
 	// Read the directory
 	fi, err := file.Readdir(-1)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -94,6 +108,8 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 
 		page.FileRefs = append(page.FileRefs, fr)
 	}
+
+	sort.Sort(ByName(page.FileRefs))
 
 	dirListingTemplate.Execute(w, page)
 }
