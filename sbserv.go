@@ -44,7 +44,7 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 	var page Page
 	page.Path = r.URL.Path
 	page.VHash = vhash
-	const layout = "Mon Jan 2 15:04:05 PST 2006"
+	const layout = "2006-01-02 15:04:05"
 	for _, f := range fi {
 		//fmt.Fprintf(w, "%s\n", f.Name())
 		var fr FileRef

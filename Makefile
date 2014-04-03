@@ -1,8 +1,8 @@
 DATA_DIR    = data
 
 DATA_FILES  = $(DATA_DIR)/templates/dir_listing.html
-
 DATA_FILES += $(DATA_DIR)/version_hash
+DATA_FILES += $(DATA_DIR)/static/js/jquery.tablesorter.min.js
 
 GO_FILES    = bindata.go
 GO_FILES   += sbserv.go
