@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Directory listing for {{.Path}}</title>
+    <title>Directory {{.Path}}</title>
 
     <!-- Bootstrap -->
-    <link href="/_static/{{.VHash}}/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -35,7 +35,10 @@
         <tbody>
           <tr>
           	<td>
-          	  <a href=".">Parent Directory</a>
+          	  <a href=".">
+                <span class="glyphicon glyphicon-arrow-up"></span>
+                Parent Directory
+              </a>
           	</td>
             <td>
             </td>
@@ -44,7 +47,10 @@
             {{range .}}
               <tr>
                 <td>
-                  <a href="{{.Path}}">{{.Name}}</a>
+                  <a href="{{.Path}}">
+                    <span class="glyphicon {{.Glyphicon}}"></span>
+                    {{.Name}}
+                  </a>
                 </td>
                 <td>
                   {{.ModTime}}
@@ -63,6 +69,6 @@
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="/_static/{{.VHash}}/js/bootstrap.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
   </body>
 </html>

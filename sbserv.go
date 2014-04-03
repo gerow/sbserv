@@ -15,9 +15,10 @@ import (
 )
 
 type FileRef struct {
-	Path    string
-	Name    string
-	ModTime string
+	Path      string
+	Name      string
+	ModTime   string
+	Glyphicon string
 }
 
 type Page struct {
@@ -50,6 +51,47 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 		fr.Name = f.Name()
 		fr.Path = path.Join(r.URL.Path, f.Name())
 		fr.ModTime = string(f.ModTime().Format(layout))
+		fr.Glyphicon = "glyphicon-file"
+
+		if f.Mode().IsDir() {
+			fr.Glyphicon = "glyphicon-folder-open"
+		} else {
+			switch ext := filepath.Ext(fr.Path); {
+			case ext == ".mp3":
+				fallthrough
+			case ext == ".ogg":
+				fallthrough
+			case ext == ".flac":
+				fr.Glyphicon = "glyphicon-music"
+			case ext == ".jpg":
+				fallthrough
+			case ext == ".jepg":
+				fallthrough
+			case ext == ".png":
+				fallthrough
+			case ext == ".bmp":
+				fallthrough
+			case ext == ".gif":
+				fr.Glyphicon = "glyphicon-picture"
+			case ext == ".mkv":
+				fallthrough
+			case ext == ".avi":
+				fallthrough
+			case ext == ".mov":
+				fallthrough
+			case ext == ".flv":
+				fallthrough
+			case ext == ".mpeg":
+				fallthrough
+			case ext == ".mpg":
+				fallthrough
+			case ext == ".mpe":
+				fallthrough
+			case ext == ".ogv":
+				fr.Glyphicon = "glyphicon-film"
+			}
+		}
+
 		page.FileRefs = append(page.FileRefs, fr)
 	}
 
