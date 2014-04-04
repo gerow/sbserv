@@ -15,15 +15,12 @@ to compile certain static assets into the executable.
 
 1. run "go get github.com/gerow/sbserv". This will try to compile the project
 and fail. This is normal. Building will require the addition of one more tool.
-2. run "go install github.com/jteeuwen/go-bindata". This tool will be used to
-package static assets with sbserv. This will install the go-bindata executable
-into $GOPATH/bin. Note that the included makefile expects that $GOPATH/bin is in
-your path.
-3. cd into $GOPATH/src/github.com/gerow/sbserv. Now simply run "make". This will
-create an executable called "sbserv" that you can use to run the server. If you
-would like to cross compile to linux, freebsd, or darwin simply look in the
-Makefile for whichever one you would like to do, or just run "make
-cross-compile" to cross to all platforms the script knows about.
+2. cd into $GOPATH/src/github.com/gerow/sbserv. Now simply run "make". This
+will install all the necessary dependencies for building and create an
+executable called "sbserv" that you can use to run the server. If you would
+like to cross compile to linux, freebsd, or darwin simply look in the Makefile
+for whichever one you would like to do, or just run "make cross-compile" to
+cross to all platforms the script knows about.
 
 Usage
 =====
