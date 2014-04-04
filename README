@@ -1,0 +1,37 @@
+sbserv
+======
+
+sbserv is a tiny file server I wrote for my own use. Basically I was not happy
+with the fact that Apache's file server didn't support the ability to download
+an entire directory as a zip file, so I went ahead and made my own.
+
+Building
+========
+
+Assuming you have go installed and have your go path properly set up, building
+sbserv isn't all that difficult. It is a little less straightforward than most
+go programs, though, since it requires an additional step in order to allow us
+to compile certain static assets into the executable.
+
+1. run "go get github.com/gerow/sbserv". This will try to compile the project
+and fail. This is normal. Building will require the addition of one more tool.
+2. run "go install github.com/jteeuwen/go-bindata". This tool will be used to
+package static assets with sbserv. This will install the go-bindata executable
+into $GOPATH/bin. Note that the included makefile expects that $GOPATH/bin is in
+your path.
+3. cd into $GOPATH/src/github.com/gerow/sbserv. Now simply run "make". This will
+create an executable called "sbserv" that you can use to run the server. If you
+would like to cross compile to linux, freebsd, or darwin simply look in the
+Makefile for whichever one you would like to do, or just run "make
+cross-compile" to cross to all platforms the script knows about.
+
+Usage
+=====
+
+Simply run the executable and specify what address to have it bind to.
+
+> ./sbserv localhost:8080
+
+It is suggested that you reverse-proxy sbserv behind something like Apache or
+Nginx. In this case you should probably bind to localhost. Otherwise binding to
+0.0.0.0 works instead.
