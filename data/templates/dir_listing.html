@@ -47,6 +47,13 @@
                     <span class="glyphicon {{.Glyphicon}}"></span>
                     {{.Name}}
                   </a>
+                  {{if .isDir}}
+                  <div class="downloadFolderButton" style="display: inline-block;float: right;">
+                    <a href="{{.Path}}?dldir=true">
+                    <span class="glyphicon glyphicon-disk-save"></span>
+                    </a>
+                  </div>
+                  {{end}}
                 </td>
                 <td>
                   {{.ModTime}}
