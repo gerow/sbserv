@@ -99,10 +99,28 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 				fallthrough
 			case ext == ".mpg":
 				fallthrough
+			case ext == ".mp4":
+				fallthrough
+			case ext == ".m4v:
+				fallthrough
 			case ext == ".mpe":
 				fallthrough
 			case ext == ".ogv":
 				fr.Glyphicon = "glyphicon-film"
+			case ext == ".zip":
+				fallthrough
+			case ext == ".tar":
+				fallthrough
+			case ext == ".gz":
+				fallthrough
+			case ext == ".rar":
+				fr.Glyphicon = "glyphicon-compressed"
+			case ext == ".epub":
+				fallthrough
+			case ext == ".mobi":
+				fallthrough
+			case ext == ".pdf":
+				fr.Glyphicon = "glyphicon-book"
 			}
 		}
 
