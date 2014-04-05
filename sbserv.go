@@ -20,7 +20,7 @@ type FileRef struct {
 	Name      string
 	ModTime   string
 	Glyphicon string
-	isDir     bool
+	IsDir     bool
 }
 
 type Page struct {
@@ -70,7 +70,7 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 
 		if f.Mode().IsDir() {
 			fr.Glyphicon = "glyphicon-folder-open"
-			fr.isDir = true
+			fr.IsDir = true
 		} else {
 			switch ext := filepath.Ext(fr.Path); {
 			case ext == ".mp3":
