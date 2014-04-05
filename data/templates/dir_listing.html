@@ -47,10 +47,10 @@
                     <span class="glyphicon {{.Glyphicon}}"></span>
                     {{.Name}}
                   </a>
-                  {{if .isDir}}
+                  {{if .IsDir}}
                   <div class="downloadFolderButton" style="display: inline-block;float: right;">
                     <a href="{{.Path}}?dldir=true">
-                    <span class="glyphicon glyphicon-disk-save"></span>
+                    <span class="glyphicon glyphicon-cloud-download"></span>
                     </a>
                   </div>
                   {{end}}
