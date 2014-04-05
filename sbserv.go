@@ -101,7 +101,7 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 				fallthrough
 			case ext == ".mp4":
 				fallthrough
-			case ext == ".m4v:
+			case ext == ".m4v":
 				fallthrough
 			case ext == ".mpe":
 				fallthrough
