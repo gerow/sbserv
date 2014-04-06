@@ -134,33 +134,31 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 	dirListingTemplate.Execute(w, page)
 }
 
-func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
-	fi, err := file.Readdir(-1)
+func writeDir(file *os.File, p string, prefix string, zw *zip.Writer, w http.ResponseWriter) {
+	log.Printf("Creating dir from %s with prefix %s\n", p, prefix)
 
+	fi, err := file.Readdir(-1)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	//fmt.Fprintf(w, "we're going to try to give you a zip now!")
-
-	w.Header().Set("Content-Type", "application/zip")
-
-	zw := zip.NewWriter(w)
-	defer zw.Close()
-
 	for _, fiEntry := range fi {
 		f, err := os.Open(path.Join(p, fiEntry.Name()))
 		if err != nil {
-			// if we have any trouble with a file just skip it and log the error
 			log.Println(err.Error())
 			continue
 		}
-
 		defer f.Close()
 
-		fileWriter, err := zw.Create(fiEntry.Name())
+		if fiEntry.IsDir() {
+			log.Printf("Creating subdirectory for %v\n", fiEntry)
+			writeDir(f, path.Join(p, fiEntry.Name()), path.Join(prefix, fiEntry.Name()), zw, w)
+			continue
+		}
+
+		fileWriter, err := zw.Create(path.Join(prefix, fiEntry.Name()))
 		if err != nil {
 			log.Println(err.Error())
 			continue
@@ -168,6 +166,23 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 
 		io.Copy(fileWriter, f)
 	}
+}
+
+func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/zip")
+
+	zw := zip.NewWriter(w)
+	defer zw.Close()
+
+	f, err := os.Open(p)
+	defer f.Close()
+
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeDir(f, p, "", zw, w)
 }
 
 func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
