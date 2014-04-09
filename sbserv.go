@@ -185,9 +185,10 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 	writeDir(f, p, "", zw, w)
 }
 
-func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
+func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request, fi os.FileInfo) {
 	//io.Copy(w, file)
-	fileServerHandler.ServeHTTP(w, r)
+	//fileServerHandler.ServeHTTP(w, r)
+	http.ServeContent(w, r, p, fi.ModTime(), file)
 }
 
 func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
@@ -218,6 +219,8 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 
 	// Don't ever expire
 	w.Header().Set("Cache-Control", "public")
+	// Or at least don't expire until the AI machines take over. They
+	// can deal with fixing this.
 	w.Header().Set("Expires", "Sun, 17-Jan-2038 19:14:07 GMT")
 
 	fmt.Fprint(w, string(assetBytes))
@@ -268,7 +271,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	case mode.IsRegular():
 		log.Printf("Handling %s as a regular file\n", p)
-		handleFile(file, p, w, r)
+		handleFile(file, p, w, r, fi)
 	default:
 		log.Println("Received attempt to serve non-regular file")
 		http.Error(w, "Refusing to read a non-regular file.", http.StatusBadRequest)
