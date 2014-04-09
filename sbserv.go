@@ -21,6 +21,7 @@ type FileRef struct {
 	ModTime   string
 	Glyphicon string
 	IsDir     bool
+	VideoType string
 }
 
 type Page struct {
@@ -89,11 +90,7 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 				fallthrough
 			case ext == ".gif":
 				fr.Glyphicon = "glyphicon-picture"
-			case ext == ".mkv":
-				fallthrough
 			case ext == ".avi":
-				fallthrough
-			case ext == ".mov":
 				fallthrough
 			case ext == ".flv":
 				fallthrough
@@ -101,13 +98,19 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 				fallthrough
 			case ext == ".mpg":
 				fallthrough
-			case ext == ".mp4":
-				fallthrough
-			case ext == ".m4v":
-				fallthrough
 			case ext == ".mpe":
 				fallthrough
 			case ext == ".ogv":
+				fr.Glyphicon = "glyphicon-film"
+			case ext == ".mkv":
+				fr.VideoType = "video/webm"
+				fr.Glyphicon = "glyphicon-film"
+			case ext == ".mov":
+				fallthrough
+			case ext == ".m4v":
+				fallthrough
+			case ext == ".mp4":
+				fr.VideoType = "video/mp4"
 				fr.Glyphicon = "glyphicon-film"
 			case ext == ".zip":
 				fallthrough

@@ -1,0 +1,9 @@
+.iconButton {
+    display: inline-block;
+    float: right;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+.timeColumn {
+    text-align: right;
+}
