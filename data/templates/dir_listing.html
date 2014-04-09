@@ -8,6 +8,8 @@
 
     <!-- Bootstrap -->
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link href="/_static/{{.VHash}}/css/dir_listing.css" rel="stylesheet">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -29,33 +31,46 @@
         Parent Directory
       </a>
     </div>
-      <table id="dir-table" class="table dir-table">
+      <table id="dir-table" class="table dir-table table-striped table-condensed">
         <thead>
           <th>
             Name
           </th>
-          <th>
+          <th class="timeColumn">
             Time Modified
           </th>
         </thead>
-        <tbody>
+        <tbody id="fileListings">
           {{with .FileRefs}}
             {{range .}}
-              <tr>
+              <tr class="fileEntry">
                 <td>
-                  <a href="{{.Path}}">
-                    <span class="glyphicon {{.Glyphicon}}"></span>
-                    {{.Name}}
-                  </a>
-                  {{if .IsDir}}
-                  <div class="downloadFolderButton" style="display: inline-block;float: right;">
-                    <a href="{{.Path}}?dldir=true">
-                    <span class="glyphicon glyphicon-cloud-download"></span>
+                  <div>
+                    <a href="{{.Path}}">
+                      <span class="glyphicon {{.Glyphicon}}"></span>
+                      {{.Name}}
                     </a>
+                    {{if .IsDir}}
+                    <div class="downloadFolderButton iconButton">
+                      <a href="{{.Path}}?dldir=true">
+                      <span class="glyphicon glyphicon-cloud-download"></span>
+                      </a>
+                    </div>
+                    {{end}}
+                    {{if .VideoType}}
+                    <div class="playMovieButton iconButton">
+                      <a href="#">
+                        <span class="glyphicon glyphicon-play"></span>
+                      </a>
+                    </div>
+                    {{end}}
+                  </div>
+                  {{if .VideoType}}
+                  <div class="moviePanel collapse" src="{{.Path}}" type="{{.VideoType}}">
                   </div>
                   {{end}}
                 </td>
-                <td>
+                <td class="timeColumn">
                   {{.ModTime}}
                 </td>
               </tr>
@@ -74,12 +89,6 @@
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
     <script src="/_static/{{.VHash}}/js/jquery.tablesorter.min.js"></script>
-    <script type="text/javascript">
-    $(document).ready(function() {
-      $("#dir-table").tablesorter({
-        dateFormat: ""
-      });
-    });
-    </script>
+    <script src="/_static/{{.VHash}}/js/dir_listing.js"></script>
   </body>
 </html>
