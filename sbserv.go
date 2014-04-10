@@ -2,6 +2,8 @@ package main
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"io"
@@ -191,6 +193,9 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request, fi os.FileInfo) {
 	//io.Copy(w, file)
 	//fileServerHandler.ServeHTTP(w, r)
+	etagBytes := sha256.Sum256([]byte(fi.ModTime().String()))
+	etag := hex.EncodeToString(etagBytes[:len(etagBytes)])
+	w.Header().Set("ETag", etag)
 	http.ServeContent(w, r, p, fi.ModTime(), file)
 }
 
@@ -230,6 +235,11 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Dumping header values:")
+	for k, v := range r.Header {
+		log.Printf("%s - %s\n", k, v)
+	}
+
 	p := path.Join(cwd, r.URL.Path)
 	p = path.Clean(p)
 	if !strings.HasPrefix(p, cwd) {
