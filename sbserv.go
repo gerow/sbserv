@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -21,14 +22,16 @@ type FileRef struct {
 	Path      string
 	Name      string
 	ModTime   string
+	Size      int64
 	Glyphicon string
-	IsDir     bool
-	VideoType string
+	Type      string
+	IsDir     bool   `json:"-"`
+	VideoType string `json:"-"`
 }
 
 type Page struct {
 	Path     string
-	FileRefs []FileRef
+	FileRefs []FileRef `json:"Files"`
 	VHash    string
 }
 
@@ -69,12 +72,16 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 		fr.Name = f.Name()
 		fr.Path = path.Join(r.URL.Path, f.Name())
 		fr.ModTime = string(f.ModTime().Format(layout))
+		fr.Size = f.Size()
 		fr.Glyphicon = "glyphicon-file"
 
 		if f.Mode().IsDir() {
 			fr.Glyphicon = "glyphicon-folder-open"
 			fr.IsDir = true
+			fr.Type = "directory"
 		} else {
+			fr.IsDir = false
+			fr.Type = "file"
 			switch ext := filepath.Ext(fr.Path); {
 			case ext == ".mp3":
 				fallthrough
@@ -136,7 +143,18 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 
 	sort.Sort(ByName(page.FileRefs))
 
-	dirListingTemplate.Execute(w, page)
+	if r.FormValue("format") == "json" {
+		w.Header().Set("Content-Type", "application/json")
+		jsonForm, err := json.Marshal(page)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, string(jsonForm))
+	} else {
+		dirListingTemplate.Execute(w, page)
+	}
 }
 
 func writeDir(file *os.File, p string, prefix string, zw *zip.Writer, w http.ResponseWriter) {
