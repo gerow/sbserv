@@ -8,6 +8,7 @@ DATA_FILES += $(DATA_DIR)/static/css/dir_listing.css
 
 GO_FILES    = bindata.go
 GO_FILES   += sbserv.go
+GO_FILES	 += filecache.go
 
 all: sbserv
 
