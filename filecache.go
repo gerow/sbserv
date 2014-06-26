@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"os"
+	"path"
 	"time"
 )
 
@@ -8,6 +11,7 @@ type FileCache struct {
 	Path        string
 	RecvChannel chan fcTask
 	Closed      bool
+	FileRefs    []FileRef
 }
 
 type SearchResult struct {
@@ -36,8 +40,32 @@ func (fc *FileCache) daemon() {
 	}
 }
 
-func (fc *FileCache) doRefresh() {
+func (fc *FileCache) doRefreshDirectory(realPath string, webPath string) {
+	file, err := os.Open(realPath)
+	defer file.Close()
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
+	fi, err := file.Readdir(-1)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	for _, f := range fi {
+		fr := MakeFileRef(webPath, f)
+		fc.FileRefs = append(fc.FileRefs, fr)
+		if f.IsDir() {
+			fc.doRefreshDirectory(path.Join(realPath, f.Name()), path.Join(webPath, f.Name()))
+		}
+	}
+}
+
+func (fc *FileCache) doRefresh() {
+	fc.FileRefs = []FileRef{}
+	fc.doRefreshDirectory(fc.Path, "/")
 }
 
 func (fc *FileCache) doSearch() {

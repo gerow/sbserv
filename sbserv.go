@@ -39,6 +39,7 @@ var cwd string
 var dirListingTemplate *template.Template
 var vhash string
 var fileServerHandler http.Handler
+var fileCache FileCache
 
 type ByName []FileRef
 
@@ -54,6 +55,81 @@ func (a ByName) Less(i, j int) bool {
 	return a[i].Name < a[j].Name
 }
 
+func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
+	var fr FileRef
+	fr.Name = f.Name()
+	fr.Path = path.Join(leadingPath, f.Name())
+	const layout = "2006-01-02 15:04:05"
+	fr.ModTime = string(f.ModTime().Format(layout))
+	fr.Size = f.Size()
+	fr.Glyphicon = "glyphicon-file"
+
+	if f.Mode().IsDir() {
+		fr.Glyphicon = "glyphicon-folder-open"
+		fr.IsDir = true
+		fr.Type = "directory"
+	} else {
+		fr.IsDir = false
+		fr.Type = "file"
+		switch ext := filepath.Ext(fr.Path); {
+		case ext == ".mp3":
+			fallthrough
+		case ext == ".ogg":
+			fallthrough
+		case ext == ".flac":
+			fr.Glyphicon = "glyphicon-music"
+		case ext == ".jpg":
+			fallthrough
+		case ext == ".jepg":
+			fallthrough
+		case ext == ".png":
+			fallthrough
+		case ext == ".bmp":
+			fallthrough
+		case ext == ".gif":
+			fr.Glyphicon = "glyphicon-picture"
+		case ext == ".avi":
+			fallthrough
+		case ext == ".flv":
+			fallthrough
+		case ext == ".mpeg":
+			fallthrough
+		case ext == ".mpg":
+			fallthrough
+		case ext == ".mpe":
+			fallthrough
+		case ext == ".ogv":
+			fr.Glyphicon = "glyphicon-film"
+		case ext == ".mkv":
+			fr.VideoType = "video/webm"
+			fr.Glyphicon = "glyphicon-film"
+		case ext == ".mov":
+			fallthrough
+		case ext == ".m4v":
+			fallthrough
+		case ext == ".mp4":
+			fr.VideoType = "video/mp4"
+			fr.Glyphicon = "glyphicon-film"
+		case ext == ".zip":
+			fallthrough
+		case ext == ".tar":
+			fallthrough
+		case ext == ".gz":
+			fallthrough
+		case ext == ".rar":
+			fr.Glyphicon = "glyphicon-compressed"
+		case ext == ".epub":
+			fallthrough
+		case ext == ".mobi":
+			fallthrough
+		case ext == ".pdf":
+			fr.Glyphicon = "glyphicon-book"
+		}
+	}
+
+	return fr
+}
+
 func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
 	// Read the directory
 	fi, err := file.Readdir(-1)
@@ -65,79 +141,8 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 	var page Page
 	page.Path = r.URL.Path
 	page.VHash = vhash
-	const layout = "2006-01-02 15:04:05"
 	for _, f := range fi {
-		//fmt.Fprintf(w, "%s\n", f.Name())
-		var fr FileRef
-		fr.Name = f.Name()
-		fr.Path = path.Join(r.URL.Path, f.Name())
-		fr.ModTime = string(f.ModTime().Format(layout))
-		fr.Size = f.Size()
-		fr.Glyphicon = "glyphicon-file"
-
-		if f.Mode().IsDir() {
-			fr.Glyphicon = "glyphicon-folder-open"
-			fr.IsDir = true
-			fr.Type = "directory"
-		} else {
-			fr.IsDir = false
-			fr.Type = "file"
-			switch ext := filepath.Ext(fr.Path); {
-			case ext == ".mp3":
-				fallthrough
-			case ext == ".ogg":
-				fallthrough
-			case ext == ".flac":
-				fr.Glyphicon = "glyphicon-music"
-			case ext == ".jpg":
-				fallthrough
-			case ext == ".jepg":
-				fallthrough
-			case ext == ".png":
-				fallthrough
-			case ext == ".bmp":
-				fallthrough
-			case ext == ".gif":
-				fr.Glyphicon = "glyphicon-picture"
-			case ext == ".avi":
-				fallthrough
-			case ext == ".flv":
-				fallthrough
-			case ext == ".mpeg":
-				fallthrough
-			case ext == ".mpg":
-				fallthrough
-			case ext == ".mpe":
-				fallthrough
-			case ext == ".ogv":
-				fr.Glyphicon = "glyphicon-film"
-			case ext == ".mkv":
-				fr.VideoType = "video/webm"
-				fr.Glyphicon = "glyphicon-film"
-			case ext == ".mov":
-				fallthrough
-			case ext == ".m4v":
-				fallthrough
-			case ext == ".mp4":
-				fr.VideoType = "video/mp4"
-				fr.Glyphicon = "glyphicon-film"
-			case ext == ".zip":
-				fallthrough
-			case ext == ".tar":
-				fallthrough
-			case ext == ".gz":
-				fallthrough
-			case ext == ".rar":
-				fr.Glyphicon = "glyphicon-compressed"
-			case ext == ".epub":
-				fallthrough
-			case ext == ".mobi":
-				fallthrough
-			case ext == ".pdf":
-				fr.Glyphicon = "glyphicon-book"
-			}
-		}
-
+		fr := MakeFileRef(r.URL.Path, f)
 		page.FileRefs = append(page.FileRefs, fr)
 	}
 
@@ -345,6 +350,16 @@ func main() {
 	bindAddress := os.Args[1]
 
 	fileServerHandler = http.FileServer(http.Dir(cwd))
+
+	// Start the file cache daemon
+	fileCache = FileCache{}
+	fileCache.Path = cwd
+	fileCache.doRefresh()
+
+	log.Printf("filecache found files: ")
+	for _, f := range fileCache.FileRefs {
+		log.Printf(f.Path)
+	}
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(bindAddress, nil)
