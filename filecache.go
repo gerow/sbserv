@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"time"
 )
 
@@ -35,7 +37,9 @@ func (fc *FileCache) daemon() {
 		case task.action == "refresh":
 			fc.doRefresh()
 		case task.action == "search":
-			fc.doSearch()
+			regex := task.args[0].(string)
+			responseChannel := task.args[1].(chan []FileRef)
+			fc.doSearch(regex, responseChannel)
 		}
 	}
 }
@@ -68,8 +72,24 @@ func (fc *FileCache) doRefresh() {
 	fc.doRefreshDirectory(fc.Path, "/")
 }
 
-func (fc *FileCache) doSearch() {
+func (fc *FileCache) doSearch(regex string, responseChannel chan []FileRef) {
+	re, err := regexp.Compile(regex)
+	if err != nil {
+		// if it failed just close the response channel to indicate that
+		// it failed
+		close(responseChannel)
+	}
 
+	matchedFiles := []FileRef{}
+
+	for _, f := range fc.FileRefs {
+		if re.MatchString(f.Path) {
+			matchedFiles = append(matchedFiles, f)
+		}
+	}
+
+	responseChannel <- matchedFiles
+	close(responseChannel)
 }
 
 func (fc *FileCache) refresh() {
@@ -101,7 +121,31 @@ func NewFileCache(path string) *FileCache {
 	return &fc
 }
 
-func (fc *FileCache) Search() {
+func (fc *FileCache) Search(regex string) ([]FileRef, error) {
+	task := fcTask{}
+	task.action = "search"
+	filerefChannel := make(chan []FileRef)
+	task.args = []interface{}{regex, filerefChannel}
+
+	fc.RecvChannel <- task
+
+	timeout := make(chan bool, 1)
+	go func() {
+		// timeout after 5 seconds
+		time.Sleep(5 * time.Second)
+	}()
+	select {
+	case resRefs, ok := <-filerefChannel:
+		if !ok {
+			return nil, fmt.Errorf("Search \"%s\" failed", regex)
+		}
+
+		return resRefs, nil
+	case <-timeout:
+		return nil, fmt.Errorf("Search \"%s\" timed out", regex)
+	}
+
+	return nil, fmt.Errorf("Search \"%s\" failed. FileCache daemon not running")
 }
 
 func (fc *FileCache) Close() {

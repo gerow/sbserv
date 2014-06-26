@@ -352,12 +352,11 @@ func main() {
 	fileServerHandler = http.FileServer(http.Dir(cwd))
 
 	// Start the file cache daemon
-	fileCache = FileCache{}
-	fileCache.Path = cwd
-	fileCache.doRefresh()
+	fileCache = *NewFileCache(cwd)
 
-	log.Printf("filecache found files: ")
-	for _, f := range fileCache.FileRefs {
+	matchedRef, err := fileCache.Search("\\.mp3")
+	log.Printf("git matched:")
+	for _, f := range matchedRef {
 		log.Printf(f.Path)
 	}
 
