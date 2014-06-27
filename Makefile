@@ -10,15 +10,9 @@ GO_FILES    = bindata.go
 GO_FILES   += sbserv.go
 GO_FILES	 += filecache.go
 
-all: sbserv sbserv.debug
-
-
-sbserv: $(GO_FILES)
+all: $(GO_FILES)
 	go get
 	go build
-
-sbserv.debug: $(GO_FILES)
-	go get
 	go build -o sbserv.debug -gcflags "-N -l"
 
 $(DATA_DIR)/version_hash: .git
