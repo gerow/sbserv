@@ -10,11 +10,16 @@ GO_FILES    = bindata.go
 GO_FILES   += sbserv.go
 GO_FILES	 += filecache.go
 
-all: sbserv
+all: sbserv sbserv.debug
 
 
 sbserv: $(GO_FILES)
+	go get
 	go build
+
+sbserv.debug: $(GO_FILES)
+	go get
+	go build -o sbserv.debug -gcflags "-N -l"
 
 $(DATA_DIR)/version_hash: .git
 	git rev-parse HEAD > $(DATA_DIR)/version_hash
@@ -25,7 +30,7 @@ bindata.go: $(DATA_FILES)
 
 clean:
 	-rm -f bindata.go
-	-rm -f sbserv
+	-rm -f sbserv sbserv.debug
 	-rm -f sbserv-linux-amd64 sbserv-linux-386 sbserv-freebsd-amd64 sbserv-freebsd-386 sbserv-darwin-amd64 sbserv-darwin-386
 
 cross-compile: sbserv-linux-amd64 sbserv-linux-386 sbserv-freebsd-amd64 sbserv-freebsd-386 sbserv-darwin-amd64 sbserv-darwin-386

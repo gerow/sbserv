@@ -1,4 +1,5 @@
 sbserv
+sbserv.debug
 bindata.go
 sbserv.exe
 data/version_hash

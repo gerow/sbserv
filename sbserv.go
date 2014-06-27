@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	id3 "github.com/gerow/id3-go"
 	"html/template"
 	"io"
 	"log"
@@ -27,6 +28,7 @@ type FileRef struct {
 	Type      string
 	IsDir     bool   `json:"-"`
 	VideoType string `json:"-"`
+	Extra     map[string]interface{}
 }
 
 type Page struct {
@@ -63,6 +65,7 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 	fr.ModTime = string(f.ModTime().Format(layout))
 	fr.Size = f.Size()
 	fr.Glyphicon = "glyphicon-file"
+	fr.Extra = make(map[string]interface{})
 
 	if f.Mode().IsDir() {
 		fr.Glyphicon = "glyphicon-folder-open"
@@ -71,7 +74,8 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 	} else {
 		fr.IsDir = false
 		fr.Type = "file"
-		switch ext := filepath.Ext(fr.Path); {
+		ext := filepath.Ext(fr.Path)
+		switch {
 		case ext == ".mp3":
 			fallthrough
 		case ext == ".ogg":
@@ -124,6 +128,29 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 			fallthrough
 		case ext == ".pdf":
 			fr.Glyphicon = "glyphicon-book"
+		}
+		if ext == ".mp3" {
+			log.Printf("opening mp3 file: %s", path.Join(cwd, fr.Path))
+			mp3File, err := id3.Open(path.Join(cwd, fr.Path))
+			if err == nil {
+				log.Printf("found id3 tags!")
+				defer mp3File.Close()
+				fr.Extra["id3"] = struct {
+					Title    string
+					Artist   string
+					Album    string
+					Year     string
+					Genre    string
+					Comments []string
+				}{
+					mp3File.Title(),
+					mp3File.Artist(),
+					mp3File.Album(),
+					mp3File.Year(),
+					mp3File.Genre(),
+					mp3File.Comments(),
+				}
+			}
 		}
 	}
 
@@ -355,9 +382,10 @@ func main() {
 	fileCache = *NewFileCache(cwd)
 
 	matchedRef, err := fileCache.Search("\\.mp3")
-	log.Printf("git matched:")
+	log.Printf("\\.mp3 matched")
 	for _, f := range matchedRef {
 		log.Printf(f.Path)
+		//log.Printf("Artist: ", f.Extra["id3"].Artist)
 	}
 
 	http.HandleFunc("/", handler)
