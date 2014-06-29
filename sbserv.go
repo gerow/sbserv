@@ -284,6 +284,58 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(assetBytes))
 }
 
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	queries, ok := r.Form["query"]
+	if !ok {
+		log.Println("Received search request without query argument")
+		http.Error(w, "Search requires query argument", http.StatusBadRequest)
+		return
+	}
+
+	if len(queries) != 1 {
+		log.Println("Received multiple query arguments")
+		http.Error(w, "Search requires one and only one query argument", http.StatusBadRequest)
+		return
+	}
+
+	query := queries[0]
+
+	log.Printf("got search request for \"%s\"", query)
+	fileRefs, err := fileCache.Search(query)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "invalid regex", http.StatusBadRequest)
+		return
+	}
+
+	page := Page{
+		Path:     "/_search query: " + query,
+		FileRefs: fileRefs,
+		VHash:    vhash,
+	}
+
+	if r.FormValue("format") == "json" {
+		w.Header().Set("Content-Type", "application/json")
+		jsonForm, err := json.Marshal(page)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, string(jsonForm))
+		return
+	}
+
+	dirListingTemplate.Execute(w, page)
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Dumping header values:")
 	for k, v := range r.Header {
@@ -301,6 +353,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	// determine if this is a request for assets
 	if strings.HasPrefix(r.URL.Path, "/_static/") {
 		handleStatic(r.URL.Path, w, r)
+		return
+	}
+
+	// determine if this is a search request
+	if r.URL.Path == "/_search" {
+		handleSearch(w, r)
 		return
 	}
 
@@ -344,7 +402,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	var err error
-
 	log.Printf("starting")
 
 	cwd, err = os.Getwd()
