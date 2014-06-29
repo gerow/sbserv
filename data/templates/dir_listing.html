@@ -22,6 +22,10 @@
   <body>
     <div class="container">
     <h1 class="path">{{.Path}}</h1>
+    <form action="/_search">
+      Search (regex of full path): <input type="text" name="query">
+      <input type="submit">
+    </form>
     <div class="dldir-div">
       <a href="{{.Path}}?dldir=true">Download this directory</a>
     </div>
