@@ -436,13 +436,6 @@ func main() {
 	// Start the file cache daemon
 	fileCache = *NewFileCache(cwd)
 
-	matchedRef, err := fileCache.Search("\\.mp3")
-	log.Printf("\\.mp3 matched")
-	for _, f := range matchedRef {
-		log.Printf(f.Path)
-		//log.Printf("Artist: ", f.Extra["id3"].Artist)
-	}
-
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(bindAddress, nil)
 }
