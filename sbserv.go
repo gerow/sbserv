@@ -131,9 +131,17 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 		}
 		if ext == ".mp3" {
 			log.Printf("opening mp3 file: %s", path.Join(cwd, fr.Path))
-			mp3File, err := id3.Open(path.Join(cwd, fr.Path))
+			mp3File, err := id3.OpenReadOnly(path.Join(cwd, fr.Path))
 			if err == nil {
 				log.Printf("found id3 tags!")
+				log.Printf("Frames:")
+				for _, frame := range mp3File.AllFrames() {
+					log.Printf("  ID: %s", frame.Id())
+					log.Printf("  Size: %d", frame.Size())
+					log.Printf("  StatusFlags: %d", frame.StatusFlags())
+					log.Printf("  FormatFlags: %d", frame.FormatFlags())
+					log.Printf("  String: %s", frame.String())
+				}
 				defer mp3File.Close()
 				fr.Extra["id3"] = struct {
 					Title    string
