@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	id3 "github.com/gerow/id3-go"
 	"html/template"
 	"io"
 	"log"
@@ -31,6 +30,15 @@ type FileRef struct {
 	Extra     map[string]interface{}
 }
 
+type Id3Extra struct {
+	Title    string
+	Artist   string
+	Album    string
+	Year     string
+	Genre    string
+	Comments []string
+}
+
 type Page struct {
 	Path     string
 	FileRefs []FileRef `json:"Files"`
@@ -41,7 +49,8 @@ var cwd string
 var dirListingTemplate *template.Template
 var vhash string
 var fileServerHandler http.Handler
-var fileCache FileCache
+var fileCache *FileCache
+var id3Cache *Id3Cache
 
 type ByName []FileRef
 
@@ -130,24 +139,9 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 			fr.Glyphicon = "glyphicon-book"
 		}
 		if ext == ".mp3" {
-			mp3File, err := id3.OpenReadOnly(path.Join(cwd, fr.Path))
-			if err == nil {
-				defer mp3File.Close()
-				fr.Extra["id3"] = struct {
-					Title    string
-					Artist   string
-					Album    string
-					Year     string
-					Genre    string
-					Comments []string
-				}{
-					mp3File.Title(),
-					mp3File.Artist(),
-					mp3File.Album(),
-					mp3File.Year(),
-					mp3File.Genre(),
-					mp3File.Comments(),
-				}
+			extra, err := id3Cache.Get(path.Join(cwd, fr.Path))
+			if err != nil {
+				fr.Extra["id3"] = *extra
 			}
 		}
 	}
@@ -434,7 +428,8 @@ func main() {
 	fileServerHandler = http.FileServer(http.Dir(cwd))
 
 	// Start the file cache daemon
-	fileCache = *NewFileCache(cwd)
+	fileCache = NewFileCache(cwd)
+	id3Cache = NewId3Cache()
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(bindAddress, nil)
