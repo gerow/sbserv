@@ -427,9 +427,10 @@ func main() {
 
 	fileServerHandler = http.FileServer(http.Dir(cwd))
 
+	// Start the id3 cache daemon
+	id3Cache = NewId3Cache()
 	// Start the file cache daemon
 	fileCache = NewFileCache(cwd)
-	id3Cache = NewId3Cache()
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(bindAddress, nil)
