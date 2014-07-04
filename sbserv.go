@@ -140,7 +140,7 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 		}
 		if ext == ".mp3" {
 			extra, err := id3Cache.Get(path.Join(cwd, fr.Path))
-			if err != nil {
+			if err == nil {
 				fr.Extra["id3"] = *extra
 			}
 		}
