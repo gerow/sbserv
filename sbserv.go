@@ -2,6 +2,9 @@ package main
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -19,14 +22,26 @@ type FileRef struct {
 	Path      string
 	Name      string
 	ModTime   string
+	Size      int64
 	Glyphicon string
-	IsDir     bool
-	VideoType string
+	Type      string
+	IsDir     bool   `json:"-"`
+	VideoType string `json:"-"`
+	Extra     map[string]interface{}
+}
+
+type Id3Extra struct {
+	Title    string
+	Artist   string
+	Album    string
+	Year     string
+	Genre    string
+	Comments []string
 }
 
 type Page struct {
 	Path     string
-	FileRefs []FileRef
+	FileRefs []FileRef `json:"Files"`
 	VHash    string
 }
 
@@ -34,6 +49,8 @@ var cwd string
 var dirListingTemplate *template.Template
 var vhash string
 var fileServerHandler http.Handler
+var fileCache *FileCache
+var id3Cache *Id3Cache
 
 type ByName []FileRef
 
@@ -49,6 +66,89 @@ func (a ByName) Less(i, j int) bool {
 	return a[i].Name < a[j].Name
 }
 
+func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
+	var fr FileRef
+	fr.Name = f.Name()
+	fr.Path = path.Join(leadingPath, f.Name())
+	const layout = "2006-01-02 15:04:05"
+	fr.ModTime = string(f.ModTime().Format(layout))
+	fr.Size = f.Size()
+	fr.Glyphicon = "glyphicon-file"
+	fr.Extra = make(map[string]interface{})
+
+	if f.Mode().IsDir() {
+		fr.Glyphicon = "glyphicon-folder-open"
+		fr.IsDir = true
+		fr.Type = "directory"
+	} else {
+		fr.IsDir = false
+		fr.Type = "file"
+		ext := filepath.Ext(fr.Path)
+		switch {
+		case ext == ".mp3":
+			fallthrough
+		case ext == ".ogg":
+			fallthrough
+		case ext == ".flac":
+			fr.Glyphicon = "glyphicon-music"
+		case ext == ".jpg":
+			fallthrough
+		case ext == ".jepg":
+			fallthrough
+		case ext == ".png":
+			fallthrough
+		case ext == ".bmp":
+			fallthrough
+		case ext == ".gif":
+			fr.Glyphicon = "glyphicon-picture"
+		case ext == ".avi":
+			fallthrough
+		case ext == ".flv":
+			fallthrough
+		case ext == ".mpeg":
+			fallthrough
+		case ext == ".mpg":
+			fallthrough
+		case ext == ".mpe":
+			fallthrough
+		case ext == ".ogv":
+			fr.Glyphicon = "glyphicon-film"
+		case ext == ".mkv":
+			fr.VideoType = "video/webm"
+			fr.Glyphicon = "glyphicon-film"
+		case ext == ".mov":
+			fallthrough
+		case ext == ".m4v":
+			fallthrough
+		case ext == ".mp4":
+			fr.VideoType = "video/mp4"
+			fr.Glyphicon = "glyphicon-film"
+		case ext == ".zip":
+			fallthrough
+		case ext == ".tar":
+			fallthrough
+		case ext == ".gz":
+			fallthrough
+		case ext == ".rar":
+			fr.Glyphicon = "glyphicon-compressed"
+		case ext == ".epub":
+			fallthrough
+		case ext == ".mobi":
+			fallthrough
+		case ext == ".pdf":
+			fr.Glyphicon = "glyphicon-book"
+		}
+		if ext == ".mp3" {
+			extra, err := id3Cache.Get(path.Join(cwd, fr.Path))
+			if err == nil {
+				fr.Extra["id3"] = *extra
+			}
+		}
+	}
+
+	return fr
+}
+
 func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
 	// Read the directory
 	fi, err := file.Readdir(-1)
@@ -60,81 +160,25 @@ func handleDir(file *os.File, p string, w http.ResponseWriter, r *http.Request) 
 	var page Page
 	page.Path = r.URL.Path
 	page.VHash = vhash
-	const layout = "2006-01-02 15:04:05"
 	for _, f := range fi {
-		//fmt.Fprintf(w, "%s\n", f.Name())
-		var fr FileRef
-		fr.Name = f.Name()
-		fr.Path = path.Join(r.URL.Path, f.Name())
-		fr.ModTime = string(f.ModTime().Format(layout))
-		fr.Glyphicon = "glyphicon-file"
-
-		if f.Mode().IsDir() {
-			fr.Glyphicon = "glyphicon-folder-open"
-			fr.IsDir = true
-		} else {
-			switch ext := filepath.Ext(fr.Path); {
-			case ext == ".mp3":
-				fallthrough
-			case ext == ".ogg":
-				fallthrough
-			case ext == ".flac":
-				fr.Glyphicon = "glyphicon-music"
-			case ext == ".jpg":
-				fallthrough
-			case ext == ".jepg":
-				fallthrough
-			case ext == ".png":
-				fallthrough
-			case ext == ".bmp":
-				fallthrough
-			case ext == ".gif":
-				fr.Glyphicon = "glyphicon-picture"
-			case ext == ".avi":
-				fallthrough
-			case ext == ".flv":
-				fallthrough
-			case ext == ".mpeg":
-				fallthrough
-			case ext == ".mpg":
-				fallthrough
-			case ext == ".mpe":
-				fallthrough
-			case ext == ".ogv":
-				fr.Glyphicon = "glyphicon-film"
-			case ext == ".mkv":
-				fr.VideoType = "video/webm"
-				fr.Glyphicon = "glyphicon-film"
-			case ext == ".mov":
-				fallthrough
-			case ext == ".m4v":
-				fallthrough
-			case ext == ".mp4":
-				fr.VideoType = "video/mp4"
-				fr.Glyphicon = "glyphicon-film"
-			case ext == ".zip":
-				fallthrough
-			case ext == ".tar":
-				fallthrough
-			case ext == ".gz":
-				fallthrough
-			case ext == ".rar":
-				fr.Glyphicon = "glyphicon-compressed"
-			case ext == ".epub":
-				fallthrough
-			case ext == ".mobi":
-				fallthrough
-			case ext == ".pdf":
-				fr.Glyphicon = "glyphicon-book"
-			}
-		}
-
+		fr := MakeFileRef(r.URL.Path, f)
 		page.FileRefs = append(page.FileRefs, fr)
 	}
 
 	sort.Sort(ByName(page.FileRefs))
 
-	dirListingTemplate.Execute(w, page)
+	if r.FormValue("format") == "json" {
+		w.Header().Set("Content-Type", "application/json")
+		jsonForm, err := json.Marshal(page)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, string(jsonForm))
+	} else {
+		dirListingTemplate.Execute(w, page)
+	}
 }
 
 func writeDir(file *os.File, p string, prefix string, zw *zip.Writer, w http.ResponseWriter) {
@@ -188,9 +232,13 @@ func handleDownloadDir(file *os.File, p string, w http.ResponseWriter, r *http.R
 	writeDir(f, p, "", zw, w)
 }
 
-func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request) {
+func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request, fi os.FileInfo) {
 	//io.Copy(w, file)
-	fileServerHandler.ServeHTTP(w, r)
+	//fileServerHandler.ServeHTTP(w, r)
+	etagBytes := sha256.Sum256([]byte(fi.ModTime().String()))
+	etag := hex.EncodeToString(etagBytes[:len(etagBytes)])
+	w.Header().Set("ETag", etag)
+	http.ServeContent(w, r, p, fi.ModTime(), file)
 }
 
 func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
@@ -221,12 +269,71 @@ func handleStatic(p string, w http.ResponseWriter, r *http.Request) {
 
 	// Don't ever expire
 	w.Header().Set("Cache-Control", "public")
+	// Or at least don't expire until the AI machines take over. They
+	// can deal with fixing this.
 	w.Header().Set("Expires", "Sun, 17-Jan-2038 19:14:07 GMT")
 
 	fmt.Fprint(w, string(assetBytes))
 }
 
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	queries, ok := r.Form["query"]
+	if !ok {
+		log.Println("Received search request without query argument")
+		http.Error(w, "Search requires query argument", http.StatusBadRequest)
+		return
+	}
+
+	if len(queries) != 1 {
+		log.Println("Received multiple query arguments")
+		http.Error(w, "Search requires one and only one query argument", http.StatusBadRequest)
+		return
+	}
+
+	query := queries[0]
+
+	log.Printf("got search request for \"%s\"", query)
+	fileRefs, err := fileCache.Search(query)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "invalid regex", http.StatusBadRequest)
+		return
+	}
+
+	page := Page{
+		Path:     "/_search query: " + query,
+		FileRefs: fileRefs,
+		VHash:    vhash,
+	}
+
+	if r.FormValue("format") == "json" {
+		w.Header().Set("Content-Type", "application/json")
+		jsonForm, err := json.Marshal(page)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, string(jsonForm))
+		return
+	}
+
+	dirListingTemplate.Execute(w, page)
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Dumping header values:")
+	for k, v := range r.Header {
+		log.Printf("%s - %s\n", k, v)
+	}
+
 	p := path.Join(cwd, r.URL.Path)
 	p = path.Clean(p)
 	if !strings.HasPrefix(p, cwd) {
@@ -238,6 +345,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	// determine if this is a request for assets
 	if strings.HasPrefix(r.URL.Path, "/_static/") {
 		handleStatic(r.URL.Path, w, r)
+		return
+	}
+
+	// determine if this is a search request
+	if r.URL.Path == "/_search" {
+		handleSearch(w, r)
 		return
 	}
 
@@ -271,7 +384,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 	case mode.IsRegular():
 		log.Printf("Handling %s as a regular file\n", p)
-		handleFile(file, p, w, r)
+		handleFile(file, p, w, r, fi)
 	default:
 		log.Println("Received attempt to serve non-regular file")
 		http.Error(w, "Refusing to read a non-regular file.", http.StatusBadRequest)
@@ -281,7 +394,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	var err error
-
 	log.Printf("starting")
 
 	cwd, err = os.Getwd()
@@ -314,6 +426,11 @@ func main() {
 	bindAddress := os.Args[1]
 
 	fileServerHandler = http.FileServer(http.Dir(cwd))
+
+	// Start the id3 cache daemon
+	id3Cache = NewId3Cache()
+	// Start the file cache daemon
+	fileCache = NewFileCache(cwd)
 
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(bindAddress, nil)

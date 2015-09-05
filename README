@@ -5,6 +5,17 @@ sbserv is a tiny file server I wrote for my own use. Basically I was not happy
 with the fact that Apache's file server didn't support the ability to download
 an entire directory as a zip file, so I went ahead and made my own.
 
+Features
+========
+
+* List directories
+* Recursively download directies as a zip file
+* Supports range requests
+* Allows playing MKVs through the browser using html5 video element
+* Reorder directory listings client side (using Javascript)
+* Looks pretty (at least in comparison to apache's default)
+* Written in Go
+
 Building
 ========
 
