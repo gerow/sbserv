@@ -16,7 +16,7 @@ all: $(GO_FILES)
 	go build -o sbserv.debug -gcflags "-N -l"
 
 $(DATA_DIR)/version_hash: .git
-	git rev-parse HEAD > $(DATA_DIR)/version_hash
+	printf "%s" "$$(git rev-parse HEAD)" > $(DATA_DIR)/version_hash
 
 bindata.go: $(DATA_FILES)
 	go get github.com/jteeuwen/go-bindata/...
