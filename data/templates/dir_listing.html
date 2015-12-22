@@ -35,7 +35,7 @@
         Parent Directory
       </a>
     </div>
-      <table id="dir-table" class="table dir-table table-striped table-condensed">
+      <table id="dir" class="table dir table-striped table-condensed">
         <thead>
           <th>
             Name
@@ -55,7 +55,7 @@
                       {{.Name}}
                     </a>
                     {{if .IsDir}}
-                    <div class="downloadFolderButton iconButton">
+                    <div class="downloadFolderButton iconButton" title="Download Folder as .zip">
                       <a href="{{.Path}}?dldir=true">
                       <span class="glyphicon glyphicon-cloud-download"></span>
                       </a>
@@ -92,7 +92,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script src="/_static/{{.VHash}}/js/jquery.tablesorter.min.js"></script>
+    <script src="/_static/{{.VHash}}/js/jquery.tablesorter.combined.min.js"></script>
     <script src="/_static/{{.VHash}}/js/dir_listing.js"></script>
   </body>
 </html>

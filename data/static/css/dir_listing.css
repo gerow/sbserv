@@ -7,3 +7,6 @@
 .timeColumn {
     text-align: right;
 }
+.table>thead>tr>th {
+    cursor: pointer;
+}
