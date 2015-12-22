@@ -112,9 +112,8 @@ func MakeFileRef(leadingPath string, f os.FileInfo) FileRef {
 		case ext == ".mpe":
 			fallthrough
 		case ext == ".ogv":
-			fr.Glyphicon = "glyphicon-film"
+			fallthrough
 		case ext == ".mkv":
-			fr.VideoType = "video/webm"
 			fr.Glyphicon = "glyphicon-film"
 		case ext == ".mov":
 			fallthrough
