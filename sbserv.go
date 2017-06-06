@@ -237,6 +237,8 @@ func handleFile(file *os.File, p string, w http.ResponseWriter, r *http.Request,
 	etagBytes := sha256.Sum256([]byte(fi.ModTime().String()))
 	etag := hex.EncodeToString(etagBytes[:len(etagBytes)])
 	w.Header().Set("ETag", etag)
+	w.Header().Set("Content-type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", "attachment")
 	http.ServeContent(w, r, p, fi.ModTime(), file)
 }
 
