@@ -25,3 +25,18 @@ $('.moviePanel').on('show.bs.collapse', function () {
   var type = $(this).attr('type');
   $(this).html("<video controls><source src='" + src + "' type='"+ type +"'></video>");
 })
+
+$('.dlfiles-div').on('click', function (){
+  var downloadNodes = document.querySelectorAll('.downloadFileLink');
+  for (var i = 0; i < downloadNodes.length; i++) {
+    downloadNodes[i].click();
+  }
+});
+
+function DownloadAllFiles() {
+  var downloadNodes = document.querySelectorAll('.downloadFileLink');
+  for (var i = 0; i < downloadNodes.length; i++) {
+    downloadNodes[i].click();
+  }
+  return downloadNodes;
+}

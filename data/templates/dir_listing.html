@@ -27,7 +27,10 @@
       <input type="submit">
     </form>
     <div class="dldir-div">
-      <a href="{{.Path}}?dldir=true">Download this directory</a>
+      <a href="{{.Path}}?dldir=true">Download as .zip</a>
+    </div>
+    <div class="dlfiles-div">
+      <a href="#">Download all files individually</a>
     </div>
     <div>
       <a href=".">
@@ -50,14 +53,21 @@
               <tr class="fileEntry">
                 <td>
                   <div>
-                    <a href="{{.Path}}">
+                    <a class="{{.Type}}" href="{{.Path}}">
                       <span class="glyphicon {{.Glyphicon}}"></span>
                       {{.Name}}
                     </a>
                     {{if .IsDir}}
                     <div class="downloadFolderButton iconButton" title="Download Folder as .zip">
-                      <a href="{{.Path}}?dldir=true">
+                      <a href="{{.Path}}?dldir=true" download="{{.Name}}.zip">
                       <span class="glyphicon glyphicon-cloud-download"></span>
+                      </a>
+                    </div>
+                    {{end}}
+                    {{if not .IsDir}}
+                    <div class="downloadFileButton iconButton" title="Download File">
+                      <a class = "downloadFileLink" href="{{.Path}}" download="{{.Name}}">
+                      <span class="glyphicon glyphicon-save"></span>
                       </a>
                     </div>
                     {{end}}
