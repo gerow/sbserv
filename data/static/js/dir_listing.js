@@ -27,16 +27,9 @@ $('.moviePanel').on('show.bs.collapse', function () {
 })
 
 $('.dlfiles-div').on('click', function (){
-  var downloadNodes = document.querySelectorAll('.downloadFileLink');
-  for (var i = 0; i < downloadNodes.length; i++) {
-    downloadNodes[i].click();
-  }
+$('.downloadFileLink').each(function(i, a){
+  setTimeout(function () {
+    a.click();
+  }, i*1000);
 });
-
-function DownloadAllFiles() {
-  var downloadNodes = document.querySelectorAll('.downloadFileLink');
-  for (var i = 0; i < downloadNodes.length; i++) {
-    downloadNodes[i].click();
-  }
-  return downloadNodes;
-}
+});
